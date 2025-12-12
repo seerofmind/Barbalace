@@ -99,23 +99,21 @@ public class PlayerController : MonoBehaviour
     {
         Vector2 input = moveAction.ReadValue<Vector2>();
 
+        // Usamos las direcciones de la cámara para que la entrada sea relativa al ángulo de la cámara.
         Vector3 camForward = playerCamera.forward;
         Vector3 camRight = playerCamera.right;
 
+        // Aplanar las direcciones al plano XZ (importante para evitar vuelo al mirar hacia arriba/abajo)
         camForward.y = 0f;
         camRight.y = 0f;
         camForward.Normalize();
         camRight.Normalize();
 
+        // Calcular el vector de movimiento en el plano XZ
         Vector3 move = camRight * input.x + camForward * input.y;
 
-        // 3. Determinar Velocidad (Usando la variable local walkSpeed)
-        float currentSpeed = walkSpeed; // 👈 Usamos la variable local
-
-        // (Opcional: Lógica de sprint usando la variable local sprintSpeed)
-        // if (sprintAction != null && sprintAction.ReadValue<float>() > 0f && canSprint)
-        //     currentSpeed = sprintSpeed;
-
+        // 3. Determinar Velocidad
+        float currentSpeed = walkSpeed;
 
         // 4. Aplicar Movimiento (en XZ) y Gravedad (en Y)
         move = move.normalized * currentSpeed;
@@ -123,12 +121,37 @@ public class PlayerController : MonoBehaviour
 
         controller.Move(move * Time.deltaTime);
 
-        // 5. Rotación (Usando la variable local rotationSpeed)
-        if (move.sqrMagnitude > 0.01f && controller.isGrounded)
+        // ----------------------------------------------------
+        // 5. ROTACIÓN MODIFICADA: MIRAR SOLO EN EL EJE Y (Izquierda/Derecha)
+        // ----------------------------------------------------
+
+        // Solo rotamos si hay movimiento horizontal significativo
+        if (Mathf.Abs(input.x) > 0.01f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(new Vector3(move.x, 0, move.z));
-            // 👈 Usamos la variable local rotationSpeed
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            // Determinamos la dirección horizontal global que el jugador debe enfrentar.
+            // Si input.x > 0, mira hacia adelante de la cámara (derecha).
+            // Si input.x < 0, mira hacia la izquierda.
+
+            // Creamos la rotación deseada
+            Quaternion targetRotation;
+
+            if (input.x > 0)
+            {
+                // Mira hacia la derecha (dirección forward de la cámara, aplanada)
+                targetRotation = Quaternion.LookRotation(camForward);
+            }
+            else
+            {
+                // Mira hacia la izquierda (dirección opuesta)
+                targetRotation = Quaternion.LookRotation(-camForward);
+            }
+
+            // Aplicamos la rotación suavemente, forzando la rotación solo en el eje Y
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                Quaternion.Euler(0, targetRotation.eulerAngles.y, 0), // Ignoramos pitch (X) y roll (Z)
+                rotationSpeed * Time.deltaTime
+            );
         }
     }
 

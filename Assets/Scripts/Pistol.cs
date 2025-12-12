@@ -26,32 +26,19 @@ public class Pistol : MonoBehaviour
         nextFireTime = Time.time + fireRate;
 
         // 1. Instanciar el proyectil en el punto de disparo
-        if (projectilePrefab != null && firePoint != null)
-        {
-            GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+        GameObject projectileGO = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
 
-            // 2. Darle velocidad
-            // Obtenemos el Rigidbody o el componente del proyectil
-            Rigidbody rb = projectile.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                // Dispara hacia adelante del FirePoint
-                rb.linearVelocity = firePoint.forward * projectileSpeed;
-            }
-            // Si usas CharacterController (como MegamanX) y no Rigidbody:
-            // projectile.GetComponent<ProjectileScript>()?.Launch(firePoint.forward, projectileSpeed);
-        }
-        else
+        // OBTENER Y ASIGNAR EL ORIGEN:
+        ProjectileScript projectileScript = projectileGO.GetComponent<ProjectileScript>();
+        if (projectileScript != null)
         {
-            Debug.LogError("Projectile Prefab o Fire Point no asignados en Pistol.");
+            projectileScript.isPlayerProjectile = true; // 👈 Proyectil del jugador
         }
+        // Si usas CharacterController (como MegamanX) y no Rigidbody:
+        // projectile.GetComponent<ProjectileScript>()?.Launch(firePoint.forward, projectileSpeed);
     }
+      
+    
 
-    // M�todo que requiere PlayerStats al respawn
-    public void ResetAmmoOnStart()
-    {
-        // En un arma Megaman, esto realmente no hace nada
-        // ya que la munici�n es infinita, pero lo dejamos
-        // para cumplir con la llamada de PlayerStats.
-    }
+    
 }

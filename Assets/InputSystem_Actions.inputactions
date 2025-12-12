@@ -287,7 +287,7 @@
                 {
                     "name": "",
                     "id": "e396416b-fc1f-4242-a0ca-f6c6267098e5",
-                    "path": "<Keyboard>/f",
+                    "path": "<Mouse>/leftButton",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
