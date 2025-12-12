@@ -18,8 +18,8 @@ public class ProjectileScript : MonoBehaviour
         // Ejemplo: Si golpea a un enemigo (asumiendo que tiene un script EnemyHealth)
         // Puedes refinar esta lógica según tu juego.
 
-        EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
-        if (enemyHealth != null)
+        //EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();//
+        //f (enemyHealth != null)
         {
             // Opcional: llama a la función de daño del enemigo
             // enemyHealth.TakeDamage(damageAmount); 

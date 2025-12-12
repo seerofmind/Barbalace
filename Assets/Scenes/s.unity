@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 78386241}
   - component: {fileID: 78386240}
   - component: {fileID: 78386239}
+  - component: {fileID: 78386243}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -229,6 +230,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &78386243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78386238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ff4b6502850c1a4c833998524ced1b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 3
+  detectionRange: 15
+  attackRange: 10
+  moveSpeed: 3
+  rotationSpeed: 5
+  projectilePrefab: {fileID: 0}
+  firePoint: {fileID: 1875072745}
+  fireRate: 2
 --- !u!1 &87917126
 GameObject:
   m_ObjectHideFlags: 0
@@ -1029,13 +1050,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1483474901}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: -0, y: 0.7240481, z: -0, w: 0.6897496}
+  m_LocalPosition: {x: -5.5299997, y: 1, z: 9.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 92.779, z: 0}
 --- !u!43 &1525351150
 Mesh:
   m_ObjectHideFlags: 0
@@ -1218,7 +1239,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1665379608
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1351,27 +1372,16 @@ GameObject:
   - component: {fileID: 1875072744}
   - component: {fileID: 1875072743}
   - component: {fileID: 1875072742}
+  - component: {fileID: 1875072746}
   - component: {fileID: 1875072741}
-  - component: {fileID: 1875072740}
+  - component: {fileID: 1875072747}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1875072740
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1875072739}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bf4485b622626d548b4f4d64ae6d00b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!143 &1875072741
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1489,6 +1499,55 @@ Transform:
   - {fileID: 283906479}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1875072746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875072739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf4485b622626d548b4f4d64ae6d00b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerCamera: {fileID: 1483474904}
+  playerPistol: {fileID: 0}
+  walkSpeed: 5
+  sprintSpeed: 8
+  rotationSpeed: 10
+  jumpHeight: 1.5
+  playerInput: {fileID: 1875072747}
+--- !u!114 &1875072747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875072739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!43 &1882400475
 Mesh:
   m_ObjectHideFlags: 0
@@ -2010,7 +2069,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1483474904}
   - {fileID: 259863992}
   - {fileID: 87917132}
   - {fileID: 1875072745}
@@ -2018,3 +2076,4 @@ SceneRoots:
   - {fileID: 78386242}
   - {fileID: 284701475}
   - {fileID: 695109449}
+  - {fileID: 1483474904}

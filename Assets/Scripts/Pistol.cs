@@ -1,28 +1,28 @@
-using System.Diagnostics;
+
 using UnityEngine;
 
 public class Pistol : MonoBehaviour
 {
     [Header("Megaman Shot Settings")]
     public GameObject projectilePrefab; // Prefab del proyectil (el "lemon shot")
-    public Transform firePoint;         // Punto donde se instancia el proyectil (ej. la punta del arma/cámara)
+    public Transform firePoint;         // Punto donde se instancia el proyectil (ej. la punta del arma/cï¿½mara)
     public float fireRate = 0.5f;       // Tasa de disparo (ej. 0.5 segundos entre disparos)
     public float projectileSpeed = 20f; // Velocidad del proyectil
 
     private float nextFireTime = 0f;
 
     // ----------------------------------------------------
-    // La función llamada por PlayerStats
+    // La funciï¿½n llamada por PlayerStats
     // ----------------------------------------------------
     public void Shoot()
     {
         // Control de cadencia (Fire Rate)
         if (Time.time < nextFireTime)
         {
-            return; // No puede disparar aún
+            return; // No puede disparar aï¿½n
         }
 
-        // Actualiza el tiempo del próximo disparo
+        // Actualiza el tiempo del prï¿½ximo disparo
         nextFireTime = Time.time + fireRate;
 
         // 1. Instanciar el proyectil en el punto de disparo
@@ -36,7 +36,7 @@ public class Pistol : MonoBehaviour
             if (rb != null)
             {
                 // Dispara hacia adelante del FirePoint
-                rb.velocity = firePoint.forward * projectileSpeed;
+                rb.linearVelocity = firePoint.forward * projectileSpeed;
             }
             // Si usas CharacterController (como MegamanX) y no Rigidbody:
             // projectile.GetComponent<ProjectileScript>()?.Launch(firePoint.forward, projectileSpeed);
@@ -47,11 +47,11 @@ public class Pistol : MonoBehaviour
         }
     }
 
-    // Método que requiere PlayerStats al respawn
+    // Mï¿½todo que requiere PlayerStats al respawn
     public void ResetAmmoOnStart()
     {
         // En un arma Megaman, esto realmente no hace nada
-        // ya que la munición es infinita, pero lo dejamos
+        // ya que la municiï¿½n es infinita, pero lo dejamos
         // para cumplir con la llamada de PlayerStats.
     }
 }
