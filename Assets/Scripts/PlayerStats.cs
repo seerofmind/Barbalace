@@ -1,47 +1,35 @@
 ﻿using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 using UnityEngine;
 using System.Diagnostics;
 
 [RequireComponent(typeof(CharacterController))]
-public class PlayerStats : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
+    // --- Referencias ---
     [Header("References")]
-    public PlayerData playerData;
+    public PlayerData playerData;        // ScriptableObject para las stats
     public Transform playerCamera;
-    public Pistol playerPistol;
+    public Pistol playerPistol;          // Script del arma para disparar
 
-    [Header("Respawn Settings")]
-    public Transform initialPosition; // Optional spawn point in Inspector
-
-    [Header("Runtime Values")]
-    private int health;
-    private float stamina;
-    private float originalHeight;
-    private bool isDead = false;
-    public int CurrentHealth => health;
-    public float CurrentStamina => stamina;
-
-    [Header("Input")]
+    // --- Inputs ---
+    [Header("Input Setup")]
     public PlayerInput playerInput;
-    private InputAction sprintAction;
     private InputAction moveAction;
-    private InputAction shootAction;
+    private InputAction jumpAction;     // 👈 Nuevo: Acción de Salto
+    private InputAction shootAction;    // Acción de Disparo
+    private InputAction sprintAction;   // Acción de Correr (opcional)
 
+    // --- Componentes ---
     private CharacterController controller;
 
-    public enum StaminaState { Idle, Draining, Recovering }
-    private StaminaState staminaState = StaminaState.Idle;
-    private StaminaState lastStaminaState = StaminaState.Idle;
-    private bool regenPaused = false;
+    // --- Variables de Movimiento ---
+    [Header("Runtime Movement")]
+    private float verticalVelocity;
+    private float gravity = -9.81f;
     private bool canSprint = true;
 
-    private float gravity = -9.81f;
-    private float verticalVelocity;
-
-    // 🔹 Respawn data
-    private Vector3 spawnPosition;
-    private Quaternion spawnRotation;
+    // --- Variables de Disparo ---
+    private bool isDead = false; // Solo para guardar la lógica de disparo
 
     void Awake()
     {
@@ -49,281 +37,136 @@ public class PlayerStats : MonoBehaviour
         if (!playerInput)
             playerInput = FindFirstObjectByType<PlayerInput>();
 
-        //sprintAction = playerInput.actions["Sprint"];
+        // 1. Obtener Acciones del Player Input
         moveAction = playerInput.actions["Move"];
-        shootAction = playerInput.actions["Fire"];
+        jumpAction = playerInput.actions["Jump"];   // Asume que tienes una acción "Jump"
+        shootAction = playerInput.actions["Fire"];  // Asume que tienes una acción "Fire"
+        // sprintAction = playerInput.actions["Sprint"]; // Descomentar si usas sprint
 
+        // 2. Suscribir Eventos (Disparar y Saltar)
+        shootAction.performed += ctx => TryShoot();
+        jumpAction.performed += ctx => TryJump();
+
+        // Bloquear el cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        shootAction.performed += ctx => TryShoot();
 
+        // Inicializar datos (usando valores de PlayerData)
+        if (playerData == null)
+            Debug.LogError("Player Data ScriptableObject no asignado.");
+    }
 
-        health = playerData.maxHealth;
-        stamina = playerData.maxStamina;
-
-
-
-        // Store spawn position/rotation
-        if (initialPosition != null)
-        {
-            spawnPosition = initialPosition.position;
-            spawnRotation = initialPosition.rotation;
-        }
-        else
-        {
-            spawnPosition = transform.position;
-            spawnRotation = transform.rotation;
-        }
+    void OnDestroy()
+    {
+        // Limpiar suscripciones para evitar errores
+        if (shootAction != null)
+            shootAction.performed -= ctx => TryShoot();
+        if (jumpAction != null)
+            jumpAction.performed -= ctx => TryJump();
     }
 
     void Update()
     {
-        // Always listen for F1/F2
-        if (Keyboard.current.f1Key.wasPressedThisFrame)
-        {
-            Respawn();
-        }
-        if (Keyboard.current.f2Key.wasPressedThisFrame)
-        {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        }
-
-        // Skip gameplay logic if dead
-        if (health <= 0 || controller == null || !controller.enabled)
+        // Si el controlador no existe o está deshabilitado, no hagas nada
+        if (controller == null || !controller.enabled)
             return;
 
-        // Normal gameplay logic
-        HandleCrouchInput();
-        //HandleStamina();
+        HandleGravity();
         HandleMovement();
-
-        // Death check
-        if (health <= 0)
-        {
-            Die();
-        }
     }
 
 
+    // ------------------------------- Movimiento y Gravedad -------------------------------
 
-    
-    // ------------------------------- Stamina -------------------------------
-    private void HandleStamina()
+    private void HandleGravity()
     {
-        float delta = Time.deltaTime;
-        float totalDrain = 0f;
-        bool isNearEnemy = false;
-        bool isSprinting = false;
-
-        if (sprintAction.ReadValue<float>() > 0f && stamina > 0f && canSprint && !isCrouching)
+        // Si estamos tocando el suelo, reiniciamos la velocidad vertical
+        if (controller.isGrounded)
         {
-            totalDrain += playerData.sprintDrainRate;
-            isSprinting = true;
-        }
-
-        if (totalDrain > 0f)
-        {
-            stamina -= totalDrain * delta;
-            if (stamina <= 0f)
-            {
-                stamina = 0f;
-                canSprint = false;
-            }
-            staminaState = StaminaState.Draining;
-            UpdateStaminaState(staminaState, stamina);
+            if (verticalVelocity < 0f)
+                verticalVelocity = -2f; // Pequeña fuerza hacia abajo para asegurar que toca el suelo
         }
         else
         {
-            if (!regenPaused && !isNearEnemy && !isSprinting && stamina < playerData.maxStamina)
-            {
-                stamina += playerData.recoveryRate * delta;
-                if (stamina > playerData.maxStamina) stamina = playerData.maxStamina;
-                if (stamina > 1f) canSprint = true;
-
-                staminaState = StaminaState.Recovering;
-                UpdateStaminaState(staminaState, stamina);
-            }
-            else
-            {
-                staminaState = StaminaState.Idle;
-                UpdateStaminaState(staminaState, stamina);
-            }
+            // Aplicar gravedad
+            verticalVelocity += gravity * Time.deltaTime;
         }
     }
 
-    private void UpdateStaminaState(StaminaState newState, float value)
-    {
-        if (newState != lastStaminaState)
-        {
-            // Optional debug
-            // Debug.Log($"[Stamina] State: {newState}, Value: {Mathf.RoundToInt(value)}");
-            lastStaminaState = newState;
-        }
-    }
-
-    public void ModifyStamina(float amount)
-    {
-        stamina = Mathf.Clamp(stamina + amount, 0f, playerData.maxStamina);
-        if (stamina > 1f) canSprint = true;
-    }
-
-    public void PauseRecovery(bool pause)
-    {
-        regenPaused = pause;
-    }
-
-    // ------------------------------- Movement -------------------------------
     private void HandleMovement()
     {
+        // 1. Leer Input de Movimiento (WASD o Stick)
         Vector2 input = moveAction.ReadValue<Vector2>();
 
+        // 2. Obtener dirección relativa a la Cámara (para FPP)
         Vector3 camForward = playerCamera.forward;
         Vector3 camRight = playerCamera.right;
 
+        // Anular el componente Y para que el movimiento sea solo en el plano XZ
         camForward.y = 0f;
         camRight.y = 0f;
         camForward.Normalize();
         camRight.Normalize();
 
+        // Calcular el vector de movimiento deseado
         Vector3 move = camRight * input.x + camForward * input.y;
 
-        float currentSpeed = playerData.walkSpeed;
+        // 3. Determinar Velocidad
+        float currentSpeed = playerData != null ? playerData.walkSpeed : 5.0f; // Velocidad base
 
-        if (isCrouching)
-            currentSpeed = playerData.crouchSpeed;
-        else if (sprintAction.ReadValue<float>() > 0f && stamina > 0f && canSprint)
-            currentSpeed = playerData.sprintSpeed;
+        // (Opcional: Añadir lógica para sprint si descomentas sprintAction)
+        // if (sprintAction.ReadValue<float>() > 0f && canSprint)
+        //     currentSpeed = playerData.sprintSpeed;
 
-        if (controller.isGrounded)
-        {
-            if (verticalVelocity < 0f)
-                verticalVelocity = -2f;
-        }
-        else
-        {
-            verticalVelocity += gravity * Time.deltaTime;
-        }
 
-        if (move.sqrMagnitude > 0.01f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(move);
-            targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0f);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, playerData.rotationSpeed * Time.deltaTime);
-        }
-
+        // 4. Aplicar Movimiento (en XZ) y Gravedad (en Y)
         move = move.normalized * currentSpeed;
         move.y = verticalVelocity;
 
         controller.Move(move * Time.deltaTime);
+
+        // 5. Rotación (Opcional: Si quieres que el personaje rote en el eje Y al moverse)
+        if (move.sqrMagnitude > 0.01f && controller.isGrounded)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(new Vector3(move.x, 0, move.z));
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, playerData.rotationSpeed * Time.deltaTime);
+        }
     }
+
+
+    // ------------------------------- Salto -------------------------------
+
+    private void TryJump()
+    {
+        if (controller.isGrounded)
+        {
+            // La fórmula de salto basada en la gravedad (verticalVelocity = sqrt(height * -2 * gravity))
+            float jumpHeight = playerData != null ? playerData.jumpHeight : 1.5f; // Asegúrate de añadir jumpHeight a PlayerData
+
+            verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            // Debug.Log("Jump!");
+        }
+    }
+
+    // ------------------------------- Disparo -------------------------------
 
     private void TryShoot()
     {
-        // Opcional: Solo permite disparar si el jugador no está muerto
-        if (health <= 0 || isDead) return;
+        // Solo permite disparar si no está muerto (puedes añadir otras condiciones)
+        if (isDead) return;
 
-        // Llama a la función de disparo de tu pistola
+        // Llama a la función de disparo de tu pistola (ver script Pistol.cs)
         if (playerPistol != null)
         {
-            playerPistol.Shoot(); // Asumiendo que tu pistola tiene un método Shoot()
-        }
-    }
-    // ------------------------------- Damage & Respawn -------------------------------
-    public void TakeDamage(int amount)
-    {
-        health -= amount;
-        if (health <= 0 && gameObject.activeSelf)
-        {
-            health = 0;
-            Die();
+            playerPistol.Shoot();
         }
         else
         {
-            Debug.Log($"Player took {amount} damage. Remaining HP: {health}");
+            Debug.LogError("Player Pistol no asignada.");
         }
     }
 
-    public bool Heal(int amount)
-    {
-        if (health >= playerData.maxHealth)
-        {
-            Debug.Log("HP already on max.");
-            return false;
-        }
-
-        int oldHealth = health;
-
-        // Aplicar curación, asegurando que no exceda la vida máxima
-        health = Mathf.Min(health + amount, playerData.maxHealth);
-
-        int healedAmount = health - oldHealth;
-
-        if (healedAmount > 0)
-        {
-            Debug.Log($"Healed: +{healedAmount} HP. Current HP: {health}/{playerData.maxHealth}.");
-            return true;
-        }
-        return false;
-    }
-
-    public int GetMaxHealth()
-    {
-        // Retorno el maximo de vida. El metodo retorna un "int" 
-        return playerData.maxHealth;
-
-    }
-
-    private void Die()
-    {
-        if (isDead) return;
-        isDead = true;
-
-        Debug.Log("Player died!");
-
-        // Disable movement
-        if (controller != null)
-            controller.enabled = false;
-
-        // Optional: visually hide player (like mesh or renderer)
-        foreach (var renderer in GetComponentsInChildren<Renderer>())
-            renderer.enabled = false;
-    }
-
-    private void Respawn()
-    {
-        Debug.Log("Respawning player...");
-
-        // Enable movement
-        if (controller != null)
-            controller.enabled = true;
-
-        // Reset visuals
-        foreach (var renderer in GetComponentsInChildren<Renderer>())
-            renderer.enabled = true;
-
-        // Reset position & rotation
-        transform.position = spawnPosition;
-        transform.rotation = spawnRotation;
-
-        // Reset health & stamina
-        health = playerData.maxHealth;
-
-        stamina = playerData.maxStamina;
-
-        if (playerPistol != null)
-        {
-            playerPistol.ResetAmmoOnStart();
-        }
-
-        isDead = false;
-    }
-
-    void OnDestroy()
-    {
-        if (shootAction != null)
-        {
-            shootAction.performed -= ctx => TryShoot();
-        }
-    }
+    // --- Métodos de Ayuda (puedes moverlos aquí si quieres simplificar PlayerData) ---
+    // public void Die() { /* ... */ }
+    // public void TakeDamage(int amount) { /* ... */ }
 }
-
