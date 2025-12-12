@@ -18,7 +18,6 @@ public class PlayerStats : MonoBehaviour
     private int health;
     private float stamina;
     private float originalHeight;
-    private bool isCrouching = false;
     private bool isDead = false;
     public int CurrentHealth => health;
     public float CurrentStamina => stamina;
@@ -27,6 +26,7 @@ public class PlayerStats : MonoBehaviour
     public PlayerInput playerInput;
     private InputAction sprintAction;
     private InputAction moveAction;
+    private InputAction shootAction;
 
     private CharacterController controller;
 
@@ -51,11 +51,12 @@ public class PlayerStats : MonoBehaviour
 
         //sprintAction = playerInput.actions["Sprint"];
         moveAction = playerInput.actions["Move"];
+        shootAction = playerInput.actions["Fire"];
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        shootAction.performed += ctx => TryShoot();
 
-        originalHeight = controller.height;
 
         health = playerData.maxHealth;
         stamina = playerData.maxStamina;
@@ -105,21 +106,9 @@ public class PlayerStats : MonoBehaviour
 
 
 
-    // ------------------------------- Crouch -------------------------------
-    private void HandleCrouchInput()
-    {
-        bool crouchPressed = Keyboard.current.cKey.wasPressedThisFrame ||
-                             Keyboard.current.leftCtrlKey.wasPressedThisFrame;
-
-        if (crouchPressed)
-        {
-            isCrouching = !isCrouching;
-            controller.height = isCrouching ? playerData.crouchHeight : originalHeight;
-        }
-    }
-
+    
     // ------------------------------- Stamina -------------------------------
-    /*private void HandleStamina()
+    private void HandleStamina()
     {
         float delta = Time.deltaTime;
         float totalDrain = 0f;
@@ -160,7 +149,7 @@ public class PlayerStats : MonoBehaviour
                 UpdateStaminaState(staminaState, stamina);
             }
         }
-    }*/
+    }
 
     private void UpdateStaminaState(StaminaState newState, float value)
     {
@@ -202,8 +191,8 @@ public class PlayerStats : MonoBehaviour
 
         if (isCrouching)
             currentSpeed = playerData.crouchSpeed;
-        /*else if (sprintAction.ReadValue<float>() > 0f && stamina > 0f && canSprint)
-            currentSpeed = playerData.sprintSpeed;*/
+        else if (sprintAction.ReadValue<float>() > 0f && stamina > 0f && canSprint)
+            currentSpeed = playerData.sprintSpeed;
 
         if (controller.isGrounded)
         {
@@ -228,6 +217,17 @@ public class PlayerStats : MonoBehaviour
         controller.Move(move * Time.deltaTime);
     }
 
+    private void TryShoot()
+    {
+        // Opcional: Solo permite disparar si el jugador no está muerto
+        if (health <= 0 || isDead) return;
+
+        // Llama a la función de disparo de tu pistola
+        if (playerPistol != null)
+        {
+            playerPistol.Shoot(); // Asumiendo que tu pistola tiene un método Shoot()
+        }
+    }
     // ------------------------------- Damage & Respawn -------------------------------
     public void TakeDamage(int amount)
     {
@@ -318,5 +318,12 @@ public class PlayerStats : MonoBehaviour
         isDead = false;
     }
 
+    void OnDestroy()
+    {
+        if (shootAction != null)
+        {
+            shootAction.performed -= ctx => TryShoot();
+        }
+    }
 }
 
