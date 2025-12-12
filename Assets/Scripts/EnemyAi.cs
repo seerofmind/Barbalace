@@ -135,5 +135,5 @@ public class EnemyAi : MonoBehaviour
         // Destruir el objeto después de un breve momento (para animaciones de muerte, etc.)
         Destroy(gameObject, 0.5f);
     }
-}
+
 }
