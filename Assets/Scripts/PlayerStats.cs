@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
 
     // --- VARIABLES DE CONFIGURACIÓN (Reemplazando PlayerData) ---
     [Header("Player Stats")]
-    public int maxHealth = 100;
+    public int maxHealth = 10;
     private int currentHealth;
     public float walkSpeed = 5.0f;
     public float sprintSpeed = 8.0f;
@@ -74,9 +74,12 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (controller == null || !controller.enabled)
+        if (isDead)
             return;
 
+        if (controller == null || !controller.enabled)
+            return;
+        
         HandleGravity();
         HandleMovement();
     }
@@ -212,12 +215,24 @@ public class PlayerController : MonoBehaviour
 
         // Deshabilitar la entrada y el movimiento
         controller.enabled = false;
-        // Si usas el Input System, deshabilita el mapa de acciones del jugador:
-        // playerInput.SwitchCurrentActionMap("UI"); 
+
+        // Si tienes un Renderer o un Collider que quieres apagar, hazlo aquí.
+        // GetComponent<Renderer>().enabled = false; 
 
         Debug.Log("¡Jugador ha muerto!");
+        
+        if (controller != null)
+        {
+            controller.enabled = false;
+        }
 
-        // Aquí iría la lógica de GameOver, reaparición, o reinicio de escena.
-        // Destroy(gameObject); // Opcional: Si quieres destruir el objeto inmediatamente
+        // Opcional: Deshabilitar el script PlayerController si es necesario
+        // enabled = false; 
+
+        // Opcional: Deshabilitar la entrada si usas PlayerInput component
+        if (playerInput != null)
+        {
+            playerInput.enabled = false;
+        }
     }
 }

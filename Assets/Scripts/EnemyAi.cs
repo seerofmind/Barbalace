@@ -5,7 +5,7 @@ public class EnemyAi : MonoBehaviour
     // --- VARIABLES DE ATAQUE MELEE ---
     [Header("Melee Attack Settings")]
     public float meleeAttackRange = 1.5f; // Rango muy corto para golpear
-    public int damageAmount = 10;
+    public int damageAmount = 50;
     public float attackRate = 1.5f;        // Segundos entre ataques melee
     private float nextAttackTime;          // Control de cadencia
 
@@ -96,17 +96,20 @@ public class EnemyAi : MonoBehaviour
 
     private void PerformMeleeAttack()
     {
-        // Comprobación final antes de dañar (puede ser visualizado por animación)
         if (Vector3.Distance(transform.position, playerTransform.position) <= meleeAttackRange)
         {
-            // Intentar obtener el script de salud del jugador
+            // 2. Obtener el script del jugador
             PlayerController playerHealth = playerTransform.GetComponent<PlayerController>();
 
             if (playerHealth != null)
             {
-                // Llama a la función de daño del jugador
-                // playerHealth.TakeDamage(damageAmount);
-                Debug.Log($"Enemigo infligió {damageAmount} de daño Melee al jugador.");
+                // 3. ¡Llamar al método!
+                playerHealth.TakeDamage(damageAmount);
+            }
+            else
+            {
+                // Esto es CRUCIAL para depurar
+                Debug.LogError("El PlayerController no se encontró en el objeto del jugador.");
             }
         }
 
