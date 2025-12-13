@@ -484,7 +484,7 @@ GameObject:
   - component: {fileID: 78386240}
   - component: {fileID: 78386239}
   - component: {fileID: 78386243}
-  m_Layer: 8
+  m_Layer: 3
   m_Name: Enemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -576,7 +576,7 @@ Transform:
   m_GameObject: {fileID: 78386238}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.87, y: 5.13, z: -14.47}
+  m_LocalPosition: {x: 1.87, y: 5.36, z: -14.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -596,7 +596,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meleeAttackRange: 1.5
-  damageAmount: 50
+  damageAmount: 10
   attackRate: 1.5
   maxHealth: 3
   detectionRange: 15
@@ -614,7 +614,7 @@ GameObject:
   - component: {fileID: 87636714}
   - component: {fileID: 87636713}
   - component: {fileID: 87636712}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2918,7 +2918,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 1483474904}
   playerPistol: {fileID: 283906483}
-  maxHealth: 10
+  maxHealth: 100
   walkSpeed: 5
   sprintSpeed: 8
   rotationSpeed: 10

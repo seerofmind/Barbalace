@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
 
     // --- VARIABLES DE CONFIGURACIÓN (Reemplazando PlayerData) ---
     [Header("Player Stats")]
-    public int maxHealth = 10;
+    public int maxHealth = 50;
     private int currentHealth;
     public float walkSpeed = 5.0f;
     public float sprintSpeed = 8.0f;

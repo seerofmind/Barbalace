@@ -80,15 +80,23 @@ public class Pistol : MonoBehaviour
     }
     public void Shoot()
     {
+        // Asegúrate de que nextFireTime, fireRate, range, hitMask, y damageAmount 
+        // estén definidos en las variables de clase (arriba)
+
         if (Time.time < nextFireTime) return;
 
         nextFireTime = Time.time + fireRate;
 
         Vector3 origin = firePoint.position;
+
+        // Asumo que tu dirección corregida (-firePoint.forward) es correcta
         Vector3 direction = -firePoint.forward;
+
         Vector3 endPoint;
         RaycastHit hit;
 
+        // IMPORTANTE: Asegúrate de usar la máscara final filtrada (finalHitMask) si la implementaste en Awake()
+        // Si estás usando solo 'hitMask', asegúrate que la configuración de la matriz de colisión de capas ignora Player vs Player.
         if (Physics.Raycast(origin, direction, out hit, range, hitMask))
         {
             // El rayo golpeó algo
@@ -97,10 +105,21 @@ public class Pistol : MonoBehaviour
             // Lógica de daño
             if (hit.collider.CompareTag("Enemy"))
             {
-                EnemyAi enemyHealth = hit.collider.GetComponent<EnemyAi>();
-                if (enemyHealth != null)
+                // Intentamos obtener el script del enemigo
+                EnemyAi enemyScript = hit.collider.GetComponent<EnemyAi>();
+
+                if (enemyScript != null)
                 {
-                    enemyHealth.TakeDamage(damageAmount);
+                    enemyScript.TakeDamage(damageAmount);
+                    // --- DEBUG AÑADIDO ---
+                    Debug.Log($"DISPARO: Impacto exitoso en {hit.collider.name}. Daño: {damageAmount}.");
+                    // ---------------------
+                }
+                else
+                {
+                    // --- DEBUG AÑADIDO ---
+                    Debug.LogError($"El objeto '{hit.collider.name}' con tag 'Enemy' no tiene el script EnemyAi adjunto.");
+                    // ---------------------
                 }
             }
         }
