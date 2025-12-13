@@ -1,33 +1,35 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 
 public class EnemyAi : MonoBehaviour
 {
-    
+    // --- VARIABLES DE ATAQUE MELEE ---
+    [Header("Melee Attack Settings")]
+    public float meleeAttackRange = 1.5f; // Rango muy corto para golpear
+    public int damageAmount = 10;
+    public float attackRate = 1.5f;        // Segundos entre ataques melee
+    private float nextAttackTime;          // Control de cadencia
+
+    // --- Variables de Enemy Stats ---
     [Header("Enemy Stats")]
     public int maxHealth = 3;
     private int currentHealth;
 
     [Header("Detection & Movement")]
-    public float detectionRange = 15f; // Radio para detectar al jugador
-    public float attackRange = 10f;    // Distancia a la que empieza a disparar
+    public float detectionRange = 15f;
     public float moveSpeed = 3f;
     public float rotationSpeed = 5f;
 
-    [Header("Ranged Attack")]
-    public GameObject projectilePrefab; // El prefab del proyectil enemigo
-    public Transform firePoint;         // Punto desde donde se dispara el proyectil
-    public float fireRate = 2.0f;       // Segundos entre disparos
-    private float nextFireTime;
+    // --- Ranged Attack (Removido) ---
+    // REMOVIDO: public Transform firePoint;
+    // REMOVIDO: public GameObject projectilePrefab;
 
-    // Referencia al jugador (usamos la Transform para la posición)
+    // Referencia al jugador
     private Transform playerTransform;
     private bool isDead = false;
 
     void Awake()
     {
         currentHealth = maxHealth;
-        // 1. Encontrar al jugador al inicio (asumiendo que tiene el tag "Player")
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -37,30 +39,29 @@ public class EnemyAi : MonoBehaviour
         {
             Debug.LogError("No se encontró un objeto con el tag 'Player' en la escena.");
         }
+
+        // REMOVIDO: Lógica de LineRenderer y LayerMask
     }
 
     void Update()
     {
-        if (isDead || playerTransform == null)
-        {
-            return;
-        }
+        if (isDead || playerTransform == null) return;
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
         if (distanceToPlayer <= detectionRange)
         {
-            // 2. Mirar al jugador
+            // Siempre mira al jugador en el rango de detección
             RotateTowardsPlayer();
 
-            if (distanceToPlayer <= attackRange)
+            if (distanceToPlayer <= meleeAttackRange) // 👈 Usamos el rango Melee
             {
-                // 3. Atacar si está dentro del rango de ataque
+                // 3. Atacar si está dentro del rango de ataque cuerpo a cuerpo
                 TryAttack();
             }
             else
             {
-                // 4. Moverse hacia el jugador si está en rango de detección pero fuera de ataque
+                // 4. Moverse hacia el jugador para acortar distancia
                 MoveTowardsPlayer();
             }
         }
@@ -69,41 +70,47 @@ public class EnemyAi : MonoBehaviour
     private void RotateTowardsPlayer()
     {
         Vector3 direction = playerTransform.position - transform.position;
-        direction.y = 0; // Solo rotar en el plano horizontal (eje Y)
+        direction.y = 0;
         Quaternion lookRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
     }
 
     private void MoveTowardsPlayer()
     {
-        // Calcular el movimiento para acercarse lentamente
-        Vector3 moveDirection = (playerTransform.position - transform.position).normalized;
-        moveDirection.y = 0; // Asegurar que no se mueva verticalmente (si es necesario)
+        // Se mueve hasta estar justo al borde del rango de ataque melee
+        Vector3 targetPosition = playerTransform.position - (playerTransform.position - transform.position).normalized * meleeAttackRange;
+        targetPosition.y = transform.position.y; // Mantener la altura del enemigo
 
-        transform.position += moveDirection * moveSpeed * Time.deltaTime;
-        // Opcional: Si usas un NavMeshAgent, aquí usarías agent.SetDestination(playerTransform.position);
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
     }
 
     private void TryAttack()
     {
-        if (Time.time > nextFireTime)
+        // Control de cadencia de ataque
+        if (Time.time > nextAttackTime)
         {
-            nextFireTime = Time.time + fireRate;
-            ShootProjectile();
+            nextAttackTime = Time.time + attackRate;
+            PerformMeleeAttack(); // 👈 Nuevo método de ataque
         }
     }
 
-    private void ShootProjectile()
+    private void PerformMeleeAttack()
     {
-        if (projectilePrefab != null && firePoint != null)
+        // Comprobación final antes de dañar (puede ser visualizado por animación)
+        if (Vector3.Distance(transform.position, playerTransform.position) <= meleeAttackRange)
         {
-            // Instanciar el proyectil y darle la misma rotación que el punto de disparo (que ya apunta al jugador)
-            Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+            // Intentar obtener el script de salud del jugador
+            PlayerController playerHealth = playerTransform.GetComponent<PlayerController>();
+
+            if (playerHealth != null)
+            {
+                // Llama a la función de daño del jugador
+                // playerHealth.TakeDamage(damageAmount);
+                Debug.Log($"Enemigo infligió {damageAmount} de daño Melee al jugador.");
+            }
         }
-        else
-        {
-            Debug.LogError("Projectile Prefab o Fire Point no asignados al enemigo.");
-        }
+
+        // Opcional: Aquí puedes activar una animación de golpe.
     }
 
     // ---------------------- Health and Damage ----------------------
@@ -128,12 +135,6 @@ public class EnemyAi : MonoBehaviour
 
         Debug.Log("Enemy destroyed!");
 
-        // Deshabilitar lógica o componentes inmediatamente
-        // GetComponent<Collider>().enabled = false;
-        // GetComponent<Renderer>().enabled = false;
-
-        // Destruir el objeto después de un breve momento (para animaciones de muerte, etc.)
         Destroy(gameObject, 0.5f);
     }
-
 }

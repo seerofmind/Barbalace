@@ -12,6 +12,8 @@ public class PlayerController : MonoBehaviour
 
     // --- VARIABLES DE CONFIGURACIÓN (Reemplazando PlayerData) ---
     [Header("Player Stats")]
+    public int maxHealth = 100;
+    private int currentHealth;
     public float walkSpeed = 5.0f;
     public float sprintSpeed = 8.0f;
     public float rotationSpeed = 10.0f;
@@ -39,6 +41,7 @@ public class PlayerController : MonoBehaviour
 
     void Awake()
     {
+        currentHealth = maxHealth;
         controller = GetComponent<CharacterController>();
         if (!playerInput)
             playerInput = FindFirstObjectByType<PlayerInput>();
@@ -99,17 +102,17 @@ public class PlayerController : MonoBehaviour
     {
         Vector2 input = moveAction.ReadValue<Vector2>();
 
-        // Usamos las direcciones de la cámara para que la entrada sea relativa al ángulo de la cámara.
+        // --- Movimiento (Usa la Cámara para la Dirección de Desplazamiento) ---
+        // Mantenemos la lógica de movimiento relativa a la cámara para que WASD/Stick funcionen bien
+        // incluso si la cámara tiene un ligero ángulo.
         Vector3 camForward = playerCamera.forward;
         Vector3 camRight = playerCamera.right;
 
-        // Aplanar las direcciones al plano XZ (importante para evitar vuelo al mirar hacia arriba/abajo)
         camForward.y = 0f;
         camRight.y = 0f;
         camForward.Normalize();
         camRight.Normalize();
 
-        // Calcular el vector de movimiento en el plano XZ
         Vector3 move = camRight * input.x + camForward * input.y;
 
         // 3. Determinar Velocidad
@@ -122,34 +125,31 @@ public class PlayerController : MonoBehaviour
         controller.Move(move * Time.deltaTime);
 
         // ----------------------------------------------------
-        // 5. ROTACIÓN MODIFICADA: MIRAR SOLO EN EL EJE Y (Izquierda/Derecha)
+        // 5. ROTACIÓN CORREGIDA: SOLO MIRAR IZQUIERDA O DERECHA
         // ----------------------------------------------------
 
-        // Solo rotamos si hay movimiento horizontal significativo
+        // Solo rotamos si hay movimiento horizontal significativo (input.x)
         if (Mathf.Abs(input.x) > 0.01f)
         {
-            // Determinamos la dirección horizontal global que el jugador debe enfrentar.
-            // Si input.x > 0, mira hacia adelante de la cámara (derecha).
-            // Si input.x < 0, mira hacia la izquierda.
-
-            // Creamos la rotación deseada
             Quaternion targetRotation;
 
+            // 1. Determinar la dirección de rotación
             if (input.x > 0)
             {
-                // Mira hacia la derecha (dirección forward de la cámara, aplanada)
-                targetRotation = Quaternion.LookRotation(camForward);
+                // El jugador se mueve a la derecha. La rotación es 0 grados (o la dirección positiva en Y).
+                // Si quieres que la derecha sea 0 grados (forward), usa el vector forward del mundo.
+                targetRotation = Quaternion.identity; // Rotación por defecto (0, 0, 0)
             }
             else
             {
-                // Mira hacia la izquierda (dirección opuesta)
-                targetRotation = Quaternion.LookRotation(-camForward);
+                // El jugador se mueve a la izquierda. La rotación es 180 grados.
+                targetRotation = Quaternion.Euler(0, 180f, 0);
             }
 
-            // Aplicamos la rotación suavemente, forzando la rotación solo en el eje Y
+            // 2. Aplicar la rotación suavemente
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
-                Quaternion.Euler(0, targetRotation.eulerAngles.y, 0), // Ignoramos pitch (X) y roll (Z)
+                targetRotation,
                 rotationSpeed * Time.deltaTime
             );
         }
@@ -182,5 +182,42 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogError("Player Pistol no asignada.");
         }
+    }
+
+    public void TakeDamage(int damageAmount)
+    {
+        if (isDead)
+        {
+            return; // Ignorar daño si ya está muerto
+        }
+
+        currentHealth -= damageAmount;
+
+        Debug.Log($"Jugador recibió {damageAmount} de daño. Vida restante: {currentHealth}");
+
+        // Opcional: Implementar efectos visuales (flash rojo, sonido de impacto)
+        // StartCoroutine(VisualDamageFeedback()); 
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        if (isDead) return;
+
+        isDead = true;
+
+        // Deshabilitar la entrada y el movimiento
+        controller.enabled = false;
+        // Si usas el Input System, deshabilita el mapa de acciones del jugador:
+        // playerInput.SwitchCurrentActionMap("UI"); 
+
+        Debug.Log("¡Jugador ha muerto!");
+
+        // Aquí iría la lógica de GameOver, reaparición, o reinicio de escena.
+        // Destroy(gameObject); // Opcional: Si quieres destruir el objeto inmediatamente
     }
 }
